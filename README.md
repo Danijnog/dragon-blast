@@ -8,5 +8,5 @@ the executable file "tp" can be used to play the game, and the player commands a
 MinGW 4.7.0
 Allegro 5.0.10
 
-- How to play
+## 🛠️ How to play
 access the folder "Arquivos TP" and then download and execute the file "tp.exe" to play the game.
