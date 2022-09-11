@@ -11,4 +11,4 @@ Allegro 5.0.10
 ## 🛠️ How to play
 access the folder "Arquivos TP" and then download and execute the file "tp.exe" to play the game.
 
-![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
+![Badge em Finalizado](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
