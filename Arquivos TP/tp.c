@@ -22,7 +22,7 @@ const int RAIO = 10;
 const int RAIO_I = 30;
 
 const int VELOCIDADE_SPRITE = 4;
-const int VELOCIDADE_BOLA = 6;
+const int VELOCIDADE_TIRO = 6;
 const int VELOCIDADE_INIMIGO = 3;
 const int TEMPO_SUPER_TIRO = 150;
 
@@ -41,14 +41,14 @@ typedef struct Bloco {
 	
 } Bloco;
 
-typedef struct Bola {
+typedef struct Tiro {
 	int x, y;
 	int raio;
 	int ativo;
 	int poder;
 	int cont;
 
-} Bola;
+} Tiro;
 
 typedef struct Inimigo {
 	int x, y;
@@ -101,13 +101,13 @@ void initBloco(Bloco *bloco) {
 	bloco->cor = al_map_rgb(rand(), rand(), rand());
 }
 
-void initBola(Bola *bola, Sprite *sprite) {
-	bola->x = sprite->pos_x;
-	bola->y = sprite->pos_y;
-	bola->raio = RAIO;
-	bola->ativo = 0;
-	bola->poder = 0;
-	bola->cont = 0;
+void initTiro(Tiro *tiro, Sprite *sprite) {
+	tiro->x = sprite->pos_x;
+	tiro->y = sprite->pos_y;
+	tiro->raio = RAIO;
+	tiro->ativo = 0;
+	tiro->poder = 0;
+	tiro->cont = 0;
 }
 
 void initInimigo(Inimigo *inimigo, Bloco *bloco) {
@@ -118,7 +118,7 @@ void initInimigo(Inimigo *inimigo, Bloco *bloco) {
 	inimigo->vel_i = VELOCIDADE_INIMIGO;
 	inimigo->ativo = 0;
 	inimigo->imortal = 0;
-	if(rand()%4 == 1)
+	if(rand()%8 == 1)
 	{
 		inimigo->imortal = 1;
 	}
@@ -150,8 +150,8 @@ void desenhaBloco(Bloco bloco) {
 							
 }
 
-void desenhaBola(Bola bola) {
-	al_draw_filled_circle(bola.x, bola.y, bola.raio, al_map_rgb(0, 0, 255));
+void desenhaTiro(Tiro tiro) {
+	al_draw_filled_circle(tiro.x, tiro.y, tiro.raio, al_map_rgb(0, 0, 255));
 }
 
 void desenhaSprite(Sprite sprite) {
@@ -192,19 +192,19 @@ void atualizaBloco(Bloco *bloco) {
 		initBloco(bloco);
 }
 
-void atualizaBola(Bola *bola, Sprite *sprite, Bloco *bloco) {
+void atualizaBola(Tiro *tiro, Sprite *sprite, Bloco *bloco) {
 	
-	if(bola->x > SCREEN_W) {
-		initBola(bola, sprite);
+	if(tiro->x > SCREEN_W) {
+		initTiro(tiro, sprite);
 	}
 	
-	if(bola->ativo || bola->poder)
-		bola->x += VELOCIDADE_BOLA;
+	if(tiro->ativo || tiro->poder)
+		tiro->x += VELOCIDADE_TIRO;
 	
 	else
 	{
-		bola->x = sprite->pos_x + sprite->largura;
-		bola->y = sprite->pos_y + sprite->altura/2;
+		tiro->x = sprite->pos_x + sprite->largura;
+		tiro->y = sprite->pos_y + sprite->altura/2;
 	}
 }
 
@@ -261,9 +261,9 @@ void desenhaInimigo(Inimigo *inimigo) {
 	}
 }
 
-int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Sprite *sprite) {
+int colisaoTiroInimigo(Tiro *tiro, Inimigo *inimigo, Bloco *bloco, Sprite *sprite) {
 	
-	if(bola->poder)
+	if(tiro->poder)
 	{
 		int i;
 		for(i=0; i<NUM_INIMIGOS; i++)
@@ -273,16 +273,16 @@ int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Sprite *sprit
 				int distancia;
 				int cateto1;
 				int cateto2;
-				cateto1 = inimigo[i].x - bola->x;
-				cateto2 = inimigo[i].y - bola->y;
+				cateto1 = inimigo[i].x - tiro->x;
+				cateto2 = inimigo[i].y - tiro->y;
 				distancia = sqrt(cateto1 * cateto1 + cateto2 * cateto2);
-				if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio >= 80)
+				if(distancia < (inimigo[i].raio + tiro->raio) && inimigo[i].raio >= 80)
 				{
 					score = score + 2;
 					initInimigo(&inimigo[i], bloco);
 					return 1;
 				}
-				else if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio < 80)
+				else if(distancia < (inimigo[i].raio + tiro->raio) && inimigo[i].raio < 80)
 				{
 					score++;
 					initInimigo(&inimigo[i], bloco);
@@ -295,7 +295,7 @@ int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Sprite *sprit
 		}
 		
 	}
-	else if(bola->ativo)
+	else if(tiro->ativo)
 	{
 		int i;
 		for(i=0; i<NUM_INIMIGOS; i++)
@@ -305,20 +305,20 @@ int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Sprite *sprit
 				int distancia;
 				int cateto1;
 				int cateto2;
-				cateto1 = inimigo[i].x - bola->x;
-				cateto2 = inimigo[i].y - bola->y;
+				cateto1 = inimigo[i].x - tiro->x;
+				cateto2 = inimigo[i].y - tiro->y;
 				distancia = sqrt(cateto1 * cateto1 + cateto2 * cateto2);
-				if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio >= 80)
+				if(distancia < (inimigo[i].raio + tiro->raio) && inimigo[i].raio >= 80)
 				{
 					score = score + 2;
-					initBola(bola, sprite);
+					initTiro(tiro, sprite);
 					initInimigo(&inimigo[i], bloco);
 					return 1;
 				}
-				else if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio < 80)
+				else if(distancia < (inimigo[i].raio + tiro->raio) && inimigo[i].raio < 80)
 				{
 					score++;
-					initBola(bola, sprite);
+					initTiro(tiro, sprite);
 					initInimigo(&inimigo[i], bloco);
 					return 1;
 				}
@@ -369,14 +369,14 @@ int colisaoSpriteInimigos(Sprite *sprite, Inimigo *inimigo) {
 }
 
 
-int colisaoBolaBloco(Bola *bola, Bloco *bloco, Sprite *sprite) {
+int colisaoTiroBloco(Tiro *tiro, Bloco *bloco, Sprite *sprite) {
 	
-	if((bola->x >= bloco->x) &&
-	(bola->x <= bloco->x + bloco->w)&&
-	(bola->y >= bloco->y) &&
-	(bola->y <= bloco->y + bloco->h))
+	if((tiro->x >= bloco->x) &&
+	(tiro->x <= bloco->x + bloco->w)&&
+	(tiro->y >= bloco->y) &&
+	(tiro->y <= bloco->y + bloco->h))
 	{
-		initBola(bola, sprite);
+		initTiro(tiro, sprite);
 		return 1;
 	}
 	return 0;
@@ -521,7 +521,6 @@ int main(int argc, char **argv){
 		al_destroy_display(display);
 		return -1;
 	}
-     
 	 
 	//registra na fila os eventos de tela (ex: clicar no X na janela)
 	al_register_event_source(event_queue, al_get_display_event_source(display));
@@ -541,8 +540,8 @@ int main(int argc, char **argv){
 	Bloco bloco;
 	initBloco(&bloco);
 	
-	Bola bola;
-	initBola(&bola, &sprite);
+	Tiro tiro;
+	initTiro(&tiro, &sprite);
 	
 	Inimigo inimigo[NUM_INIMIGOS];
 	int i;
@@ -563,7 +562,7 @@ int main(int argc, char **argv){
 		//se o tipo de evento for um evento do temporizador, ou seja, se o tempo passou de t para t+1
 		if(ev.type == ALLEGRO_EVENT_TIMER) {
 			
-			bola.cont++;
+			tiro.cont++;
 
 			
 			desenhaCenario();
@@ -574,8 +573,8 @@ int main(int argc, char **argv){
 			atualizaBloco(&bloco);
 			desenhaBloco(bloco);
 			
-			atualizaBola(&bola, &sprite, &bloco);
-			desenhaBola(bola);
+			atualizaBola(&tiro, &sprite, &bloco);
+			desenhaTiro(tiro);
 			
 			int i;
 			liberaInimigo(&inimigo[i]);
@@ -585,10 +584,10 @@ int main(int argc, char **argv){
 			
 			colisaoInimigoBloco(&inimigo[i], &bloco);
 			colisaoInimigoInimigo(&inimigo[i]);
-			colisaoBolaBloco(&bola, &bloco, &sprite);
+			colisaoTiroBloco(&tiro, &bloco, &sprite);
 			
 			
-			if(colisaoBolaInimigo(&bola, &inimigo[i], &bloco, &sprite))
+			if(colisaoTiroInimigo(&tiro, &inimigo[i], &bloco, &sprite))
 			{
 				sprintf(my_score, "Score: %d", score);
 			}
@@ -632,7 +631,7 @@ int main(int argc, char **argv){
 					break;	
 					
 				case ALLEGRO_KEY_SPACE:
-					bola.cont = 0;
+					tiro.cont = 0;
 					break;
 				
 			}
@@ -641,16 +640,16 @@ int main(int argc, char **argv){
 			switch(ev.keyboard.keycode) {
 
 				case ALLEGRO_KEY_SPACE:
-					bola.ativo = 1;
-					if(bola.cont < TEMPO_SUPER_TIRO)
+					tiro.ativo = 1;
+					if(tiro.cont < TEMPO_SUPER_TIRO)
 					{
-						bola.poder = 0;
-						bola.raio = bola.raio;
+						tiro.poder = 0;
+						tiro.raio = tiro.raio;
 					}
 					else
 					{
-						bola.poder = 1;
-						bola.raio = bola.raio * 2;
+						tiro.poder = 1;
+						tiro.raio = tiro.raio * 2;
 					}
 					break;
 			}
@@ -662,27 +661,26 @@ int main(int argc, char **argv){
 	al_clear_to_color(al_map_rgb(230,240,250));
 	
 	sprintf(my_text, "Score: %d", score);
-	al_draw_text(size_32, al_map_rgb(200, 0, 30), SCREEN_W/3, SCREEN_H/2, 0, my_text);
+	al_draw_text(size_32, al_map_rgb(200, 0, 30), SCREEN_W/3.0, SCREEN_H/2.0, 0, my_text);
 	int record;
 	if(newRecord(score, &record)) 
 	{
-		al_draw_text(size_32, al_map_rgb(200, 20, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, "NEW RECORD!");
+		al_draw_text(size_32, al_map_rgb(200, 20, 30), SCREEN_W/3.0, 100+SCREEN_H/2.0, 0, "NEW RECORD!");
 	}
 	else 
 	{
 		sprintf(my_text, "Record: %d", record);
-		al_draw_text(size_32, al_map_rgb(0, 200, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, my_text);
+		al_draw_text(size_32, al_map_rgb(0, 200, 30), SCREEN_W/3.0, 100+SCREEN_H/2.0, 0, my_text);
 	}
 	
 	//reinicializa a tela
 	al_flip_display();	
-    al_rest(2);		
-   
-   
-	
+    al_rest(2);	
+
 
 	//procedimentos de fim de jogo (fecha a tela, limpa a memoria, etc)
 	al_destroy_bitmap(background);
+	al_destroy_bitmap(sprite.imagem);
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_event_queue(event_queue);
