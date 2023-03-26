@@ -17,3 +17,4 @@ Allegro 5.0.10
 Note: If you need to compile the game, it is necessary to have the Allegro library installed on your computer, and then run de command "make" in the terminal to execute the makefile
 
 
+![Captura de Tela (70)](https://user-images.githubusercontent.com/97178655/227754769-9e72c15b-4b49-489f-b1d1-b3d166261019.png)
