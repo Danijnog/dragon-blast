@@ -12,7 +12,6 @@
 #include <math.h>
 #include <string.h>
 
-
 const float FPS = 110;  
 
 const int SCREEN_W = 1110;
@@ -382,7 +381,7 @@ int colisaoTiroBloco(Tiro *tiro, Bloco *bloco, Sprite *sprite) {
 	return 0;
 }
 
-int colisaoInimigoBloco(Inimigo *inimigo, Bloco *bloco) {
+void colisaoInimigoBloco(Inimigo *inimigo, Bloco *bloco) {
 	int i;
 	for(i=0; i<NUM_INIMIGOS; i++)
 	{
