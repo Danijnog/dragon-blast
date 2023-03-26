@@ -1,4 +1,4 @@
-# R-TYPE-GAME prototype
+# Dragon Blast
 This is a prototype of the R-type game in C language using the Allegro library that i made for a college project at UFMG
 
 ## 🛸 Description 
