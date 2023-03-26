@@ -1,13 +1,16 @@
-PASTINHA_CONJUNTA=../
-CC = $(PASTINHA_CONJUNTA)\MINGW\bin\gcc
-PATH_ALLEGRO=$(PASTINHA_CONJUNTA)\allegro-5.0.10-mingw-4.7.0
-LIBS=-lallegro-5.0.10-monolith-mt
+TARGET=game.out
+CC=gcc
+DEBUG=-g
+OPT=-O0
+WARN=-Wall
+ALLEGRO=-lallegro -lallegro_main -lallegro_audio -lallegro_dialog -lallegro_ttf -lallegro_image -lallegro_color -lallegro_memfile -lallegro_acodec -lallegro_primitives -lallegro_font -lm
+CCFLAGS=$(DEBUG) $(OPT) $(WARN) $(ALLEGRO)
+LD=gcc
+OBJS= tp.o
+all: $(OBJS)
+	$(LD) -o $(TARGET) $(OBJS) $(CCFLAGS)
+	@rm *.o
+	@./$(TARGET)
 
-all: tp.exe
-	
-tp.exe: tp.o
-	$(CC) -O2 -o tp.exe tp.o -L $(PATH_ALLEGRO)\lib $(LIBS)
-
-
-tp.o: tp.c
-	$(CC) -O2 -I $(PATH_ALLEGRO)\include -c tp.c 	
+main.o: tp.c
+	$(CC) -c $(CCFLAGS) main.c -o main.o

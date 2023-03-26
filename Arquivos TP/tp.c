@@ -1,3 +1,6 @@
+#include <allegro5/bitmap.h>
+#include <allegro5/keyboard.h>
+#include <allegro5/keycodes.h>
 #include <stdio.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
@@ -10,37 +13,26 @@
 #include <string.h>
 
 
-const float FPS = 100;  
+const float FPS = 110;  
 
-const int SCREEN_W = 960;
-const int SCREEN_H = 540;
+const int SCREEN_W = 1110;
+const int SCREEN_H = 700;
 
-const int NAVE_W = 100;
-const int NAVE_H = 50;
 const int RAIO = 10;	
 const int RAIO_I = 30;
 
-const int VELOCIDADE_NAVE = 2;
+const int VELOCIDADE_SPRITE = 4;
 const int VELOCIDADE_BOLA = 6;
 const int VELOCIDADE_INIMIGO = 3;
 const int TEMPO_SUPER_TIRO = 150;
 
 int score = 0;
 
-
 const int NUM_INIMIGOS = 11;
 
 
-ALLEGRO_COLOR COR_CENARIO;
-
-typedef struct Nave {
-	
-	int dir_x, dir_y;
-	int x, y;
-	int vel;
-	ALLEGRO_COLOR cor;
-	
-} Nave;
+// background
+ALLEGRO_BITMAP *background;
 
 typedef struct Bloco {
 	int x, y;
@@ -55,10 +47,10 @@ typedef struct Bola {
 	int ativo;
 	int poder;
 	int cont;
+
 } Bola;
 
 typedef struct Inimigo {
-	
 	int x, y;
 	int raio;
 	int vel_i;
@@ -68,8 +60,20 @@ typedef struct Inimigo {
 	
 } Inimigo;
 
+typedef struct Sprite {
+	int altura;
+	int largura;
+	int pos_x;
+	int pos_y;
+	int current_frame_y;
+	float frame;
+	int dir_x, dir_y;
+	ALLEGRO_BITMAP *imagem;
+	int vel;
+} Sprite;
+
 void initGlobais() {
-	COR_CENARIO = al_map_rgb(rand()%75, rand()%75, rand()%75);
+	background = al_load_bitmap("./assets/background.png");
 }
 
 int newRecord(int score, int *record) {
@@ -97,19 +101,9 @@ void initBloco(Bloco *bloco) {
 	bloco->cor = al_map_rgb(rand(), rand(), rand());
 }
 
-void initNave(Nave *nave) {
-	
-	nave->x = 10 + NAVE_W;
-	nave->y = SCREEN_H/2;
-	nave->dir_x = 0;
-	nave->dir_y = 0;
-	nave->cor = al_map_rgb(200 + rand()%75, 200 + rand()%75, 200 + rand()%75);
-	nave->vel = VELOCIDADE_NAVE;
-}
-
-void initBola(Bola *bola, Nave *nave) {
-	bola->x = nave->x;
-	bola->y = nave->y;
+void initBola(Bola *bola, Sprite *sprite) {
+	bola->x = sprite->pos_x;
+	bola->y = sprite->pos_y;
 	bola->raio = RAIO;
 	bola->ativo = 0;
 	bola->poder = 0;
@@ -124,7 +118,7 @@ void initInimigo(Inimigo *inimigo, Bloco *bloco) {
 	inimigo->vel_i = VELOCIDADE_INIMIGO;
 	inimigo->ativo = 0;
 	inimigo->imortal = 0;
-	if(rand()%2 == 1)
+	if(rand()%4 == 1)
 	{
 		inimigo->imortal = 1;
 	}
@@ -132,16 +126,21 @@ void initInimigo(Inimigo *inimigo, Bloco *bloco) {
 	
 }
 
-void desenhaCenario() {
-	
-	al_clear_to_color(COR_CENARIO);
+void initSprite(Sprite *sprite) {
+	sprite->pos_x = 0;
+	sprite->pos_y = 0;
+	sprite->dir_x = 0;
+	sprite->dir_y = 0;
+	sprite->altura = 161;
+	sprite->largura = 191;
+	sprite->imagem = al_load_bitmap("./assets/dragon.png");
+	sprite->current_frame_y = 161;
+	sprite->frame = 0.f;
+	sprite->vel = VELOCIDADE_SPRITE;
 }
 
-void desenhaNave(Nave nave) {
-	al_draw_filled_triangle(nave.x, nave.y,
-							nave.x - NAVE_W, nave.y - NAVE_H/2,
-							nave.x - NAVE_W, nave.y + NAVE_H/2,
-							nave.cor);
+void desenhaCenario() {
+	al_draw_bitmap(background, 0, 0, 0);
 }
 
 void desenhaBloco(Bloco bloco) {
@@ -155,6 +154,36 @@ void desenhaBola(Bola bola) {
 	al_draw_filled_circle(bola.x, bola.y, bola.raio, al_map_rgb(0, 0, 255));
 }
 
+void desenhaSprite(Sprite sprite) {
+	al_draw_bitmap_region(sprite.imagem, 191 * (int)sprite.frame,
+	sprite.current_frame_y, sprite.largura, sprite.altura, sprite.pos_x, sprite.pos_y, 0); //sx = ponto inicial da imagem, sy = ponto inicial da imagem, dx = posicao inicial x do sprite na tela, dy = posicao inicial y do sprite na tela
+}
+
+void atualizaSprite(Sprite *sprite) {
+	sprite->frame = sprite->frame + 0.02f;
+	if(sprite->frame > 3) {
+		sprite->frame -= 3;
+	}
+	sprite->pos_x = sprite->dir_x * sprite->vel; //atualização da posição do sprite quando o usuario tecla, alterando a variavel dir_x
+	sprite->pos_y = sprite->dir_y * sprite->vel; //atualização da posição do sprite quando o usuario tecla, alterando a variavel dir_x
+
+	if(sprite->pos_x + sprite->largura > SCREEN_W) {
+		sprite->pos_x = SCREEN_W - sprite->largura;
+	}
+
+	if(sprite->pos_x < 0) {
+		sprite->pos_x = 0;
+	}
+
+	if(sprite->pos_y + sprite->altura > SCREEN_H) {
+		sprite->pos_y = SCREEN_H - sprite->altura;
+	}
+
+	if(sprite->pos_y < 0) {
+		sprite->pos_y = 0;
+	}
+}
+
 
 void atualizaBloco(Bloco *bloco) {
 	bloco->x -= 1;
@@ -163,28 +192,10 @@ void atualizaBloco(Bloco *bloco) {
 		initBloco(bloco);
 }
 
-void atualizaNave(Nave *nave) {
-	
-	nave->y += nave->dir_y * nave->vel;
-	nave->x += nave->dir_x * nave->vel;
-	
-	if(nave->y + NAVE_H/2 > SCREEN_H)
-		nave->y = SCREEN_H - NAVE_H/2;
-	
-	if(nave->y - NAVE_H/2 < 0)
-		nave->y = NAVE_H/2;
-	
-	if(nave->x > SCREEN_W)
-		nave->x = SCREEN_W;
-	
-	if(nave->x - NAVE_W < 0)
-		nave->x = NAVE_W;
-}
-
-void atualizaBola(Bola *bola, Nave *nave, Bloco *bloco) {
+void atualizaBola(Bola *bola, Sprite *sprite, Bloco *bloco) {
 	
 	if(bola->x > SCREEN_W) {
-		initBola(bola, nave);
+		initBola(bola, sprite);
 	}
 	
 	if(bola->ativo || bola->poder)
@@ -192,8 +203,8 @@ void atualizaBola(Bola *bola, Nave *nave, Bloco *bloco) {
 	
 	else
 	{
-		bola->x = nave->x;
-		bola->y = nave->y;
+		bola->x = sprite->pos_x + sprite->largura;
+		bola->y = sprite->pos_y + sprite->altura/2;
 	}
 }
 
@@ -250,7 +261,7 @@ void desenhaInimigo(Inimigo *inimigo) {
 	}
 }
 
-int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Nave *nave) {
+int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Sprite *sprite) {
 	
 	if(bola->poder)
 	{
@@ -300,14 +311,14 @@ int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Nave *nave) {
 				if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio >= 80)
 				{
 					score = score + 2;
-					initBola(bola, nave);
+					initBola(bola, sprite);
 					initInimigo(&inimigo[i], bloco);
 					return 1;
 				}
 				else if(distancia < (inimigo[i].raio + bola->raio) && inimigo[i].raio < 80)
 				{
 					score++;
-					initBola(bola, nave);
+					initBola(bola, sprite);
 					initInimigo(&inimigo[i], bloco);
 					return 1;
 				}
@@ -322,55 +333,51 @@ int colisaoBolaInimigo(Bola *bola, Inimigo *inimigo, Bloco *bloco, Nave *nave) {
 }
 
 
-int colisaoNaveBloco(Nave nave, Bloco bloco) {
-   
-   if(nave.x - NAVE_W > bloco.x + bloco.w)
-	   return 0;
-   if(nave.x < bloco.x)
-	   return 0;
-   if(nave.y - NAVE_H/2 > bloco.y + bloco.h)
-	   return 0;
-   if(nave.y + NAVE_H/2 < bloco.y)
-	   return 0;
-   else 
-	   return 1;
+int colisaoSpriteBloco(Sprite *sprite, Bloco *bloco) {	
+
+	if((sprite->pos_x + sprite->largura >= bloco->x) && //pos_x do sprite começa no 0
+	(sprite->pos_x < bloco->x + bloco->w) && 
+	(sprite->pos_y + sprite->altura >= bloco->y) && //pos_y do sprite começa tbm no 0
+	(sprite->pos_y < bloco->y + bloco->h))
+	{
+		return 1;
+	}
+	else 
+		return 0;
 }
 
-int colisaoBolaBloco(Bola *bola, Bloco *bloco, Nave *nave) {
+int colisaoSpriteInimigo(Sprite *sprite, Inimigo *inimigo) {
+	if((sprite->pos_x + sprite->largura >= inimigo->x - inimigo->raio) &&
+	(sprite->pos_x < inimigo->x + inimigo->raio) &&
+	(sprite->pos_y + sprite->altura >= inimigo->y - inimigo->raio) &&
+	(sprite->pos_y < inimigo->y + inimigo->raio))
+	{
+		return 1;
+	}
+	else 
+		return 0;
+}
+
+int colisaoSpriteInimigos(Sprite *sprite, Inimigo *inimigo) {
+	int i;
+	for(i=0; i < NUM_INIMIGOS; i++)
+	{
+		if(colisaoSpriteInimigo(sprite, &inimigo[i]))
+			return 1; //se eu fizer um else aqui dentro, não funciona direito para todos os inimigos
+	}
+	return 0;
+}
+
+
+int colisaoBolaBloco(Bola *bola, Bloco *bloco, Sprite *sprite) {
 	
 	if((bola->x >= bloco->x) &&
 	(bola->x <= bloco->x + bloco->w)&&
 	(bola->y >= bloco->y) &&
 	(bola->y <= bloco->y + bloco->h))
 	{
-		initBola(bola, nave);
+		initBola(bola, sprite);
 		return 1;
-	}
-	return 0;
-}
- 
-int colisaoNaveInimigo(Nave *nave, Inimigo *inimigo) {
-
-	if(nave->x - NAVE_W >= inimigo->x + inimigo->raio)
-		return 0;
-	else if(nave->x + RAIO + 2 <= inimigo->x - inimigo->raio)
-		return 0;
-	else if(nave->y - NAVE_H/2 >= inimigo->y + inimigo->raio)
-		return 0;
-	else if(nave->y + NAVE_H/2 <= inimigo->y - inimigo->raio)
-		return 0;
-	
-	return 1;
-
-}
-
-int colisaoNaveInimigos(Nave *nave, Inimigo *inimigos)
-{
-	int i;
-	for(i=0; i<NUM_INIMIGOS; i++)
-	{
-		if(colisaoNaveInimigo(nave,&inimigos[i]))
-			return 1;
 	}
 	return 0;
 }
@@ -477,8 +484,19 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
+	al_init_image_addon();
+	al_install_keyboard();
+
 	//inicializa o modulo allegro que carrega as fontes
 	al_init_font_addon();
+	al_init_ttf_addon();
+
+	// setei o titulo da janela
+	al_set_window_title(display, "Space Invaders");
+
+	// setei o icone da janela
+	ALLEGRO_BITMAP *icon = al_load_bitmap("./assets/icon.png");
+	al_set_display_icon(display, icon);
 
 	//inicializa o modulo allegro que entende arquivos tff de fontes
 	if(!al_init_ttf_addon()) {
@@ -487,7 +505,7 @@ int main(int argc, char **argv){
 	}
 	
 	//carrega o arquivo arial.ttf da fonte Arial e define que sera usado o tamanho 32 (segundo parametro)
-    ALLEGRO_FONT *size_32 = al_load_font("arial.ttf", 32, 1);   
+    ALLEGRO_FONT *size_32 = al_load_font("font.ttf", 32, 1);   
 	if(size_32 == NULL) {
 		fprintf(stderr, "font file does not exist or cannot be accessed!\n");
 	}
@@ -495,8 +513,6 @@ int main(int argc, char **argv){
 	
 	//avisa o allegro que agora eu quero modificar as propriedades da tela
 	al_set_target_bitmap(al_get_backbuffer(display));
-	//colore a tela de preto (rgb(0,0,0))
-	al_clear_to_color(COR_CENARIO);   
 
  	//cria a fila de eventos
 	event_queue = al_create_event_queue();
@@ -514,18 +530,19 @@ int main(int argc, char **argv){
 	//registra na fila os eventos de teclado (ex: pressionar uma tecla)
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
 	//registra na fila os eventos de mouse (ex: clicar em um botao do mouse)
-	al_register_event_source(event_queue, al_get_mouse_event_source());  
+	al_register_event_source(event_queue, al_get_mouse_event_source()); 
+
 	
 	initGlobais();
-	
-	Nave nave;
-	initNave(&nave);
+
+	Sprite sprite;
+	initSprite(&sprite);
 	
 	Bloco bloco;
 	initBloco(&bloco);
 	
 	Bola bola;
-	initBola(&bola, &nave);
+	initBola(&bola, &sprite);
 	
 	Inimigo inimigo[NUM_INIMIGOS];
 	int i;
@@ -547,16 +564,17 @@ int main(int argc, char **argv){
 		if(ev.type == ALLEGRO_EVENT_TIMER) {
 			
 			bola.cont++;
+
 			
 			desenhaCenario();
-			
-			atualizaNave(&nave);
-			desenhaNave(nave);
+
+			desenhaSprite(sprite);
+			atualizaSprite(&sprite);
 			
 			atualizaBloco(&bloco);
 			desenhaBloco(bloco);
 			
-			atualizaBola(&bola, &nave, &bloco);
+			atualizaBola(&bola, &sprite, &bloco);
 			desenhaBola(bola);
 			
 			int i;
@@ -567,17 +585,18 @@ int main(int argc, char **argv){
 			
 			colisaoInimigoBloco(&inimigo[i], &bloco);
 			colisaoInimigoInimigo(&inimigo[i]);
-			colisaoBolaBloco(&bola, &bloco, &nave);
+			colisaoBolaBloco(&bola, &bloco, &sprite);
 			
-			if(colisaoBolaInimigo(&bola, &inimigo[i], &bloco, &nave))
+			
+			if(colisaoBolaInimigo(&bola, &inimigo[i], &bloco, &sprite))
 			{
 				sprintf(my_score, "Score: %d", score);
 			}
 			
 			//imprime o texto armazenado em my_text na posicao x=40,y=20
-			al_draw_text(size_32, al_map_rgb(255, 0, 0), SCREEN_W-940, 20, 0, my_score);
+			al_draw_text(size_32, al_map_rgb(255, 255, 255), SCREEN_W-1100, 20, 0, my_score);
 			
-			playing = !colisaoNaveBloco(nave, bloco) && !colisaoNaveInimigos(&nave, inimigo);
+			playing = !colisaoSpriteBloco(&sprite, &bloco) && !colisaoSpriteInimigos(&sprite, inimigo);
 			
 			//atualiza a tela (quando houver algo para mostrar)
 			al_flip_display();
@@ -587,25 +606,29 @@ int main(int argc, char **argv){
 		else if(ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 			playing = 0;
 		}
-		//se o tipo de evento for um clique de mouse
+
 		//se o tipo de evento for um pressionar de uma tecla
 		else if(ev.type == ALLEGRO_EVENT_KEY_DOWN) {
 			switch(ev.keyboard.keycode) {
 				
 				case ALLEGRO_KEY_W:
-					nave.dir_y--;
+					sprite.dir_y -= 10;
+					sprite.current_frame_y = 0;
 					break;
 				
 				case ALLEGRO_KEY_S:
-					nave.dir_y++;
+					sprite.dir_y += 10;
+					sprite.current_frame_y = 161 * 2;
 					break;
 					
 				case ALLEGRO_KEY_A:
-					nave.dir_x--;
+					sprite.dir_x -= 10;
+					sprite.current_frame_y = 161 * 3;
 					break;
 				
 				case ALLEGRO_KEY_D:
-					nave.dir_x++;
+					sprite.dir_x += 10;
+					sprite.current_frame_y = 161;
 					break;	
 					
 				case ALLEGRO_KEY_SPACE:
@@ -616,27 +639,15 @@ int main(int argc, char **argv){
 		}
 		else if(ev.type == ALLEGRO_EVENT_KEY_UP) {
 			switch(ev.keyboard.keycode) {
-				
-				case ALLEGRO_KEY_W:
-					nave.dir_y++;
-					break;
-				
-				case ALLEGRO_KEY_S:
-					nave.dir_y--;
-					break;
-					
-				case ALLEGRO_KEY_A:
-					nave.dir_x++;
-					break;
-				
-				case ALLEGRO_KEY_D:
-					nave.dir_x--;
-					break;
-					
+
 				case ALLEGRO_KEY_SPACE:
 					bola.ativo = 1;
-					
-					if(bola.cont >= TEMPO_SUPER_TIRO)
+					if(bola.cont < TEMPO_SUPER_TIRO)
+					{
+						bola.poder = 0;
+						bola.raio = bola.raio;
+					}
+					else
 					{
 						bola.poder = 1;
 						bola.raio = bola.raio * 2;
@@ -671,8 +682,7 @@ int main(int argc, char **argv){
 	
 
 	//procedimentos de fim de jogo (fecha a tela, limpa a memoria, etc)
-	
- 
+	al_destroy_bitmap(background);
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_event_queue(event_queue);
