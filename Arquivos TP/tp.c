@@ -21,7 +21,7 @@ const int SCREEN_H = 700;
 const int RAIO = 10;	
 const int RAIO_I = 30;
 
-const int VELOCIDADE_SPRITE = 4;
+const int VELOCIDADE_SPRITE = 5;
 const int VELOCIDADE_TIRO = 6;
 const int VELOCIDADE_INIMIGO = 3;
 const int TEMPO_SUPER_TIRO = 150;
@@ -492,7 +492,7 @@ int main(int argc, char **argv){
 	al_init_ttf_addon();
 
 	// setei o titulo da janela
-	al_set_window_title(display, "Space Invaders");
+	al_set_window_title(display, "Dragon Blast");
 
 	// setei o icone da janela
 	ALLEGRO_BITMAP *icon = al_load_bitmap("./assets/icon.png");
